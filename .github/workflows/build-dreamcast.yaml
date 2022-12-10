@@ -1,0 +1,14 @@
+name: Build for Dreamcast (Target)
+on: [push]
+jobs:
+  build-elf:
+    name: Build DCLoad-IP ELF
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Build ELF
+        run: cd target && ./build.sh docker
+
+      - run: ls -la target/build/loader

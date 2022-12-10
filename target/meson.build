@@ -6,7 +6,7 @@ objcopy = find_program('objcopy')
 add_project_arguments([
     '-O2', 
     '-ml', 
-    '-m4-single-only',
+    # '-m4-single-only',
     '-mpretend-cmove',
     '-Wpedantic'
 ], language: 'c')

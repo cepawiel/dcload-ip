@@ -103,13 +103,13 @@ dcload_max_sz:
     .section    .rodata
     .balign     4
 dcload:
-    .incbin     "dcload.bin"
+    .incbin     "1st_read/dcloadip.bin"
     .balign     4
 dcload_end:
 
     .section    .rodata
     .balign     4
 exception:
-    .incbin     "exception.bin"
+    .incbin     "1st_read/exception.bin"
     .balign     4
 exception_end:

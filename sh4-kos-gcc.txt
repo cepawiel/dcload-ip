@@ -1,0 +1,11 @@
+[constants]
+toolchain = '/opt/toolchains/dc/sh-elf/bin'
+
+[binaries]
+c = toolchain / 'sh-elf-gcc'
+cpp = toolchain / 'sh-elf-g++'
+as = toolchain / 'sh-elf-as'
+ar = toolchain / 'sh-elf-ar'
+strip = toolchain / 'sh-elf-strip'
+objcopy = toolchain / 'sh-elf-objcopy'
+

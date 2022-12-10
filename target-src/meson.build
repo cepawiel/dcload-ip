@@ -52,5 +52,5 @@ bin_gen = generator(objcopy,
                 arguments : ['@INPUT@', '@OUTPUT@'])
 
 subdir('dcload')
-subdir('1st_read')
+subdir('loader')
 

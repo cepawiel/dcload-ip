@@ -45,7 +45,7 @@ add_project_arguments([
     '-DDREAMCAST_IP="172.16.0.99"'
 ], language: 'c')
 
-incdir = include_directories('../target-inc')
+incdir = include_directories('include')
 
 bin_gen = generator(objcopy,
                 output  : '@BASENAME@.bin',

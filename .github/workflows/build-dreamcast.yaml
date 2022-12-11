@@ -1,8 +1,8 @@
 name: Build for Dreamcast (Target)
 on: [push]
 jobs:
-  build-elf:
-    name: Build dcload-ip ELF
+  build-target:
+    name: Build dcload-ip ELF/CDI
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -10,12 +10,6 @@ jobs:
 
       - name: Build ELF
         run: cd target && ./build.sh docker
-
-      - name: Upload ELF Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: dcloadip.elf
-          path: target/builddir/loader/loader.elf
 
       - name: Install mkdcdisc
         run: |
@@ -27,15 +21,30 @@ jobs:
             meson setup builddir
             meson compile -C builddir
 
-      - name: Build CDI
+      - name: Build Padded CDI
         run: /tmp/mkdcdisc/builddir/mkdcdisc
                 --verbosity 3
                 --elf target/builddir/loader/loader.elf
                 --name "dcloadip"
+                --output /tmp/dcload-ip-padded.cdi
+
+      - name: Build CDI
+        run: /tmp/mkdcdisc/builddir/mkdcdisc
+                --verbosity 3
+                --elf target/builddir/loader/loader.elf
+                --no-padding
+                --name "dcloadip"
                 --output /tmp/dcload-ip.cdi
+
+      - name: Copy Artifacts
+        run: |
+          mkdir /tmp/upload
+          cp /tmp/dcload-ip.cdi /tmp/upload/
+          cp /tmp/dcload-ip-padded.cdi /tmp/upload/
+          cp target/builddir/loader/loader.elf /tmp/upload/
 
       - name: Upload CDI Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: dcloadip.cdi
-          path: /tmp/dcload-ip.cdi
+          name: dcloadip
+          path: /tmp/upload/*

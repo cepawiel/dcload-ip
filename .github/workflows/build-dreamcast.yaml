@@ -4,46 +4,47 @@ jobs:
   build-target:
     name: Build dcload-ip ELF/CDI
     runs-on: ubuntu-latest
+    env:
+      MKDCDISC_PATH: /tmp/mkdcdisc
+      UPLOAD_DIR: /tmp/upload
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
 
       - name: Build ELF
-        run: cd target && ./build.sh docker
+        run: |
+            mkdir $UPLOAD_DIR
+            cd target
+            ./build.sh docker
+            cd ../
+            cp target/builddir/loader/loader.elf $UPLOAD_DIR/
 
       - name: Install mkdcdisc
         run: |
             sudo apt-get update
             sudo apt-get install meson git build-essential libisofs-dev
-            git clone https://gitlab.com/cepawiel/mkdcdisc /tmp/mkdcdisc
-            cd /tmp/mkdcdisc
+            git clone https://gitlab.com/cepawiel/mkdcdisc $MKDCDISC_PATH
+            cd $MKDCDISC_PATH
             git checkout scramble
             meson setup builddir
             meson compile -C builddir
 
       - name: Build Padded CDI
-        run: /tmp/mkdcdisc/builddir/mkdcdisc
+        run: $MKDCDISC_PATH/builddir/mkdcdisc
                 --verbosity 3
                 --elf target/builddir/loader/loader.elf
                 --name "dcloadip"
-                --output /tmp/dcload-ip-padded.cdi
+                --output $UPLOAD_DIR/dcload-ip-padded.cdi
 
       - name: Build CDI
-        run: /tmp/mkdcdisc/builddir/mkdcdisc
+        run: $MKDCDISC_PATH/builddir/mkdcdisc
                 --verbosity 3
                 --elf target/builddir/loader/loader.elf
                 --no-padding
                 --name "dcloadip"
-                --output /tmp/dcload-ip.cdi
+                --output $UPLOAD_DIR/dcload-ip.cdi
 
-      - name: Copy Artifacts
-        run: |
-          mkdir /tmp/upload
-          cp /tmp/dcload-ip.cdi /tmp/upload/
-          cp /tmp/dcload-ip-padded.cdi /tmp/upload/
-          cp target/builddir/loader/loader.elf /tmp/upload/
-
-      - name: Upload CDI Artifact
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: dcloadip

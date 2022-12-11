@@ -12,6 +12,7 @@
 #include "disable.h"
 #include "scif.h"
 #include "maple.h"
+#include "version.h"
 
 #include "perfctr.h"
 #include "memfuncs.h"
@@ -365,9 +366,10 @@ void cmd_version(ip_header_t * ip, udp_header_t * udp, command_t * command)
 		dcload_syscall_port = 31313;
 	}
 
-	datalength = strlen("dcload-ip " DCLOAD_VERSION " using "); // no '+1' because adapter name will be appended
+	const char * version_str = "dcload-ip " DCLOAD_VERSION " using ";
+	datalength = strlen(version_str); // no '+1' because adapter name will be appended
 	memcpy(response, command, COMMAND_LEN);
-	memcpy(response->data, "dcload-ip " DCLOAD_VERSION " using ", datalength);
+	memcpy(response->data, version_str, datalength);
 
 	// Append adapter type
 	j = strlen(bb->name) + 1;

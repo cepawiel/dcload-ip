@@ -2,7 +2,7 @@
 dcloadip_elf = executable('dcloadip.elf',
     'dcload-crt0.s',
     'adapter.c',
-    'bswap.s',
+    # 'bswap.s',
     'cdfs_redir.s',
     'cdfs_syscalls.c',
     'commands.c',

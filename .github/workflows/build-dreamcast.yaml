@@ -7,19 +7,14 @@ jobs:
     env:
       MKDCDISC_PATH: /tmp/mkdcdisc
       UPLOAD_DIR: /tmp/upload
+      DCLOAD_AUTHOR: 
+      DCLOAD_BRANCH: dcloadip-$GITHUB_REF_NAME-$GITHUB_SHA
+      DCLOAD_SHA: 
+
+      BUILD_DIR: builddir
+      SH4_CROSS_FILE: sh4-kos-gcc.txt
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
-      - name: Build ELF
-        run: |
-            mkdir $UPLOAD_DIR
-            cd target
-            ./build.sh docker
-            cd ../
-            cp target/builddir/loader/loader.elf $UPLOAD_DIR/
-
-      - name: Install mkdcdisc
+      - name: Install mkdcdisc      
         run: |
             sudo apt-get update
             sudo apt-get install meson git build-essential libisofs-dev
@@ -28,12 +23,30 @@ jobs:
             git checkout scramble
             meson setup builddir
             meson compile -C builddir
+            
+      - name: Check out repository code
+        uses: actions/checkout@v3
 
+      - name: Build ELF
+        run: |
+            mkdir $UPLOAD_DIR
+            docker run \
+              --rm \
+              -v $(pwd):/src \
+              einsteinx2/dcdev-gcc-toolchain:latest \
+             "apk add git binutils meson && \
+              cd target && \
+              meson setup -Drepo="$GITHUB_REPOSITORY" -Dbranch="$GITHUB_REF_NAME" -Dsha="$GITHUB_SHA" --cross-file sh4-kos-gcc.txt $BUILD_DIR && \
+              meson compile -C $BUILD_DIR --verbose"
+            readelf --sections target/$BUILD_DIR/dcload/dcloadip.elf
+            cp target/$BUILD_DIR/loader/loader.elf $UPLOAD_DIR/
+            
       - name: Build Padded CDI
         run: $MKDCDISC_PATH/builddir/mkdcdisc
                 --verbosity 3
                 --elf target/builddir/loader/loader.elf
                 --name "dcloadip"
+                --author "$GITHUB_REPOSITORY_OWNER"
                 --output $UPLOAD_DIR/dcload-ip-padded.cdi
 
       - name: Build CDI
@@ -42,6 +55,7 @@ jobs:
                 --elf target/builddir/loader/loader.elf
                 --no-padding
                 --name "dcloadip"
+                --author "$GITHUB_REPOSITORY_OWNER"
                 --output $UPLOAD_DIR/dcload-ip.cdi
 
       - name: Upload Artifacts

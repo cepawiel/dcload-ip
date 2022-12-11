@@ -34,6 +34,7 @@
 #include "cdfs.h"
 #include "maple.h"
 #include "syscalls.h"
+#include "version.h"
 
 #include "dhcp.h"
 #include "perfctr.h"
@@ -52,6 +53,24 @@ __attribute__((aligned(8))) static const unsigned int const_32[2] = {0x41f00000,
 // When using doubles, the 32-bit halves need to be flipped since SH4 doesn't reoreder
 // endianness for the 32-bit halves of a 64-bit double.
 #endif
+
+#define TEXT_HEIGHT 24
+#define TEXT_LEFT_START 30
+#define SCREEN_DISPLAY_LINE(x) (54 + TEXT_HEIGHT * x)
+
+
+enum EDisplayPos {
+	ROW_NAME = 0,
+	ROW_GIT,
+	ROW_DATE_TIME,
+	ROW_ADAPTER_TYPE,
+	ROW_MAC,
+	ROW_IP,
+	ROW_STATUS,
+
+	ROW_LEASE = 16
+};
+
 
 // Volatile informs GCC not to cache the variable in a register.
 // Most descriptions of volatile are that the data might be modified by an
@@ -156,7 +175,7 @@ void uint_to_string(unsigned int foo, unsigned char *bar)
 }
 
 // 'bar' buffer is assumed to be large enough.
-// The biggest decimal number is 4294967295, which is 10 characters‬ (excluding null term).
+// The biggest decimal number is 4294967295, which is 10 characters (excluding null term).
 // So the buffer should be able to hold 11 characters.
 void uint_to_string_dec(unsigned int foo, char *bar)
 {
@@ -252,30 +271,36 @@ void setup_video(unsigned int mode, unsigned int color)
 static void error_bb(char *msg)
 {
 	setup_video(FB_RGB0555, ERROR_BG_COLOR);
-	draw_string(30, 54, NAME, STR_COLOR);
-	draw_string(30, 78, msg, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_NAME), NAME, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_GIT), msg, STR_COLOR);
 	while(1)
 	{
 		asm volatile ("sleep"); // This way it doesn't actually halt and catch fire ;)
 	}
 }
 
+const char * git_info = DCLOAD_GITREPO " " DCLOAD_GITBRANCH " " DCLOAD_GITSHA;
+const char * build_info = DCLOAD_DATETIME;
+
+
 void disp_info(void)
 {
 	setup_video(FB_RGB0555, global_bg_color);
-	draw_string(30, 54, NAME, STR_COLOR);
-	draw_string(30, 78, bb->name, STR_COLOR);
-	draw_string(30, 102, mac_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_NAME), NAME, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_GIT), git_info, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_DATE_TIME), build_info, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_ADAPTER_TYPE), bb->name, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_MAC), mac_string, STR_COLOR);
 
 	ip_to_string(our_ip, ip_string);
-	draw_string(30, 126, ip_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_IP), ip_string, STR_COLOR);
 
 	booted = 1;
 }
 
 void disp_status(const char * status) {
-	clear_lines(150, 24, global_bg_color);
-	draw_string(30, 150, status, STR_COLOR);
+	clear_lines(SCREEN_DISPLAY_LINE(ROW_STATUS), TEXT_HEIGHT, global_bg_color);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_STATUS), status, STR_COLOR);
 }
 
 // The C language technically requires that all uninitialized global variables
@@ -329,26 +354,26 @@ static void set_ip_from_file(void)
 
 static void update_ip_display(unsigned int new_ip, const char *mode_string)
 {
-	clear_lines(126, 24, global_bg_color);
+	clear_lines(SCREEN_DISPLAY_LINE(ROW_IP), TEXT_HEIGHT, global_bg_color);
 	ip_to_string(new_ip, ip_string);
-	draw_string(30, 126, ip_string, STR_COLOR);
-	draw_string(210, 126, mode_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_IP), ip_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START + 180, SCREEN_DISPLAY_LINE(ROW_IP), mode_string, STR_COLOR);
 }
 
 static void dhcp_waiting_mode_display(void)
 {
-	clear_lines(126, 24, global_bg_color);
-	draw_string(30, 126, waiting_string, STR_COLOR);
-	draw_string(234, 126, dhcp_mode_string, STR_COLOR);
+	clear_lines(SCREEN_DISPLAY_LINE(ROW_STATUS), TEXT_HEIGHT, global_bg_color);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_STATUS), waiting_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START + 204, SCREEN_DISPLAY_LINE(ROW_STATUS), dhcp_mode_string, STR_COLOR);
 }
 
 static void update_lease_time_display(unsigned int new_time)
 {
 	// Casting to char gets rid of GCC warning.
 	uint_to_string_dec(new_time, dhcp_lease_time_string);
-	clear_lines(448, 24, global_bg_color);
-	draw_string(30, 448, dhcp_lease_string, STR_COLOR);
-	draw_string(306, 448, dhcp_lease_time_string, STR_COLOR);
+	clear_lines(SCREEN_DISPLAY_LINE(ROW_LEASE), TEXT_HEIGHT, global_bg_color);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_LEASE), dhcp_lease_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START + 276, SCREEN_DISPLAY_LINE(ROW_LEASE), dhcp_lease_time_string, STR_COLOR);
 }
 
 // Magic IP range to enable DHCP mode is 0.0.0.0/8, aka 0.x.x.x

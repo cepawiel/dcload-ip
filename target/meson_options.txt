@@ -1,0 +1,4 @@
+option('repo', type: 'string', value: '', description: 'Repo Name')
+option('branch', type: 'string', value: '', description: 'Branch Name')
+option('sha', type: 'string', value: '', description: 'Commit SHA')
+option('datetime', type: 'string', value: '', description: 'Build Date and Time')

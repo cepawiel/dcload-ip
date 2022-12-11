@@ -63,3 +63,46 @@ jobs:
         with:
           name: dcloadip
           path: /tmp/upload/*
+
+  build-host:
+    name: Build Host Tool (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Build Tool     
+        run: |
+            sudo apt-get update
+            sudo apt-get install meson build-essential libelf-dev
+            cd host-src && make
+        
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dctool
+          path: host-src/tool/dc-tool-ip
+
+
+  # test:
+  #   name: Build dcload-ip ELF/CDI
+  #   runs-on: [self-hosted, dreamcast-bba]
+    # env:
+    #   MKDCDISC_PATH: /tmp/mkdcdisc
+    #   UPLOAD_DIR: /tmp/upload
+    #   DCLOAD_AUTHOR: 
+    #   DCLOAD_BRANCH: dcloadip-$GITHUB_REF_NAME-$GITHUB_SHA
+    #   DCLOAD_SHA: 
+
+    #   BUILD_DIR: builddir
+    #   SH4_CROSS_FILE: sh4-kos-gcc.txt
+    # steps:
+    #   - name: Install mkdcdisc      
+    #     run: |
+    #         sudo apt-get update
+    #         sudo apt-get install meson git build-essential libisofs-dev
+    #         git clone https://gitlab.com/cepawiel/mkdcdisc $MKDCDISC_PATH
+    #         cd $MKDCDISC_PATH
+    #         git checkout scramble
+    #         meson setup builddir
+    #         meson compile -C builddir

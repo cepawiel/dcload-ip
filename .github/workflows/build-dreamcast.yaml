@@ -11,4 +11,7 @@ jobs:
       - name: Build ELF
         run: cd target && ./build.sh docker
 
-      - run: ls -la target/build/loader
+      - name: Upload ELF Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: target/build/loader/loader.elf

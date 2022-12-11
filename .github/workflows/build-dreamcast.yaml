@@ -2,7 +2,7 @@ name: Build for Dreamcast (Target)
 on: [push]
 jobs:
   build-elf:
-    name: Build DCLoad-IP ELF
+    name: Build dcload-ip ELF
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -14,4 +14,28 @@ jobs:
       - name: Upload ELF Artifact
         uses: actions/upload-artifact@v3
         with:
-          path: target/build/loader/loader.elf
+          name: dcloadip.elf
+          path: target/builddir/loader/loader.elf
+
+      - name: Install mkdcdisc
+        run: |
+            sudo apt-get update
+            sudo apt-get install meson git build-essential libisofs-dev
+            git clone https://gitlab.com/cepawiel/mkdcdisc /tmp/mkdcdisc
+            cd /tmp/mkdcdisc
+            git checkout scramble
+            meson setup builddir
+            meson compile -C builddir
+
+      - name: Build CDI
+        run: /tmp/mkdcdisc/builddir/mkdcdisc
+                --verbosity 3
+                --elf target/builddir/loader/loader.elf
+                --name "dcloadip"
+                --output /tmp/dcload-ip.cdi
+
+      - name: Upload CDI Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dcloadip.cdi
+          path: /tmp/dcload-ip.cdi

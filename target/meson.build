@@ -42,7 +42,8 @@ add_project_link_arguments([
 
 add_project_arguments([
     '-DDCLOAD_VERSION="2.0.1"',
-    '-DDREAMCAST_IP="172.16.0.99"'
+    '-DDREAMCAST_IP="0.0.0.0"'
+    # '-DDREAMCAST_IP="172.16.0.99"'
 ], language: 'c')
 
 incdir = include_directories('include')

@@ -44,6 +44,8 @@ executable('loader.elf',
     exception_bin,
     link_args: [
         '-Ttext=0x8c010000',
+        # TODO: Replace this with Linker Script
+        '-Wl,--defsym=_stack=0x8c01F000',
         # '-Wl,-T../loader/loader.x',
         '-Wl,-Map=loader.map'
     ]

@@ -1,8 +1,10 @@
 
-# dcload-ip 2.0.0
+# dcload-ip 
 
 A Dreamcast ethernet loader originally by [Andrew Kieschnick](http://napalm-x.thegypsy.com/andrewk/dc/).
 Updated and overhauled by Moopthehedgehog
+
+## Changes from dcload-ip
 
 ## Features
 
@@ -17,14 +19,27 @@ Updated and overhauled by Moopthehedgehog
 - NTSC 480i, PAL 576i, and VGA display output modes supported
 - Dumping exceptions over the network if the dcload console is enabled
 
-## Building
+## Building Target ELF
 
-1. Edit `Makefile.cfg` for your system and network, and then run `make`.
+```
 
-NOTE: GCC 4.7.x users using the KOS 2.1.0 build environment must ensure
-``USING_KOS_GCC`` is enabled in `Makefile.cfg`. Disabling that flag uses compile
-options meant for a portable copy of GCC 9.2/Binutils 2.33.1 compiled with an
-``sh4-elf-`` prefix, which won't work with the KOS 2.1.0 compiler.
+cd target
+meson setup --cross-file sh4-kos-gcc.txt builddir
+meson compile -C builddir
+
+```
+
+elf will be located at builddir/loader/loader.elf
+
+## Building Host Tool
+
+```
+
+cd host
+meson setup builddir
+meson compile -C builddir
+
+```
 
 ## Installation
 
@@ -100,13 +115,14 @@ typedef struct __attribute__ ((packed)) {
 	unsigned char data[];
 } command_t;
 ```
-
+*Note: this differs from original dcload*
+See https://mc.pp.se/dc/maplebus.html for more information on Maple Packet
 Maple command data format:
 
 - Maple Command (1 byte)  
-- Maple Port # (1 byte)  
-- Maple Slot # (1 byte)  
-- Maple data in 4-byte increments (1 byte)  
+- Maple Recipient Address # (1 byte)  
+- Maple Sender Address # (1 byte)
+- Maple data count in 4-byte increments (1 byte)  
 - Any data to be sent with the command (multiple of 4 bytes)  
 
 You will get a similarly formatted response in return.
@@ -264,6 +280,9 @@ struct _exception_struct_t {
 	unsigned int xf15;
 } __attribute__ ((__packed__));
 ```
+
+## Wireshark Decoder
+Launch Wireshark with `cd wireshark && wireshark -X lua_script:dcload.lua -X lua_script:maple.lua`
 
 ## Notes
 

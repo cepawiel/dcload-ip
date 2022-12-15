@@ -9,5 +9,6 @@
 example-src/console-test
 example-src/exception-test
 example-src/gethostinfo
-target/build
 host-src/tool/dc-tool-ip
+target/builddir
+host/builddir

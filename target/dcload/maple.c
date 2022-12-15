@@ -64,22 +64,20 @@ __attribute__((aligned(32))) volatile unsigned char dmabuffer[MAPLE_DMA_SIZE]; /
  * data    - parameter data (NB: big endian!)
  *
  */
-void *maple_docmd(int port, int unit, int cmd, int datalen, void *data)
+void *maple_docmd(unsigned char *data)
 {
   unsigned int *sendbuf, *recvbuf;
-  int to, from;
+  
+  unsigned int cmd = data[0];
+  unsigned int to = data[1];
+  unsigned int from = data[2];
+  unsigned int len = data[3];
 
-  port &= 3;
+  unsigned int port = (to >> 6) & 0x03;
 
   /* Compute sender and recipient address */
-  from = port << 6;
-  to = (port << 6) | (unit>0? ((1<<(unit-1))&0x1f) : 0x20);
-
-  /* Max data length = 255 longs = 1020 bytes */
-  if(datalen > 255)
-    datalen = 255;
-  else if(datalen < 0)
-    datalen = 0;
+  // from = port << 6;
+  // to = (port << 6) | (unit>0? ((1<<(unit-1))&0x1f) : 0x20);
 
   /* Allocate a 1024 byte receieve buffer at the beginning of
      dmabuffer, with proper alignment.  Also mark the buffer as
@@ -107,23 +105,23 @@ void *maple_docmd(int port, int unit, int cmd, int datalen, void *data)
 
   /* Here we know only one frame should be send and received, so
      the final message control bit will always be set...          */
-  *sendbuf++ = datalen | (port << 16) | 0x80000000; // NOTE: These 3 writes use the uncacheable area
+  *sendbuf++ = len | (port << 16) | 0x80000000; // NOTE: These 3 writes use the uncacheable area
 
   /* Write address to receive buffer where the response frame should be put */
   *sendbuf++ = ((unsigned int)recvbuf & 0x0fffffff);
 
   /* Create the frame header.  The fields are assembled "backwards"
      because of the Maple Bus big-endianness.                       */
-  *sendbuf++ = (cmd & 0xff) | (to << 8) | (from << 16) | (datalen << 24);
+  *sendbuf++ = (cmd & 0xff) | (to << 8) | (from << 16) | (len << 24);
 
   /* Copy parameter data, if any */
-  if(datalen > 0)
+  if(len > 0)
   {
 //    memcpy(sendbuf, data, datalen << 2); // sendbuf is 32-byte aligned, offset by 12. data is 8-byte aligned, offset by 4 due to port, unit, cmd, & datalen
     // So memcpy_32bit the first 4 bytes to make it all 8-byte aligned (remaining sendbuf will be 16-byte aligned and remaining data will be 8-byte aligned)
     memcpy_32bit(sendbuf, data, 4/4);
-    SH4_aligned_memcpy((void*) (((unsigned int)sendbuf + 4) & 0x1fffffff), (void*) (((unsigned int)data + 4) & 0x1fffffff), datalen - 1); // use copy-back memory area for speed boost
-    CacheBlockWriteBack((unsigned char*) ((unsigned int)sendbuf & 0x1fffffe0), ((datalen * 4) + 31)/32); // Synchronize memory with opcache in 32-byte blocks, sendbuf is already 32-byte aligned
+    SH4_aligned_memcpy((void*) (((unsigned int)sendbuf + 4) & 0x1fffffff), (void*) (((unsigned int)data + 4) & 0x1fffffff), len - 1); // use copy-back memory area for speed boost
+    CacheBlockWriteBack((unsigned char*) ((unsigned int)sendbuf & 0x1fffffe0), ((len * 4) + 31)/32); // Synchronize memory with opcache in 32-byte blocks, sendbuf is already 32-byte aligned
     // Need to do that so DMA sees the data in memory
   }
 

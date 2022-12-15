@@ -410,24 +410,27 @@ void cmd_retval(ip_header_t * ip, udp_header_t * udp, command_t * command)
 
 void cmd_maple(ip_header_t * ip, udp_header_t * udp, command_t * command)
 {
-	char *res;
-	int i;
+	unsigned char *res;
 	unsigned char *buffer = pkt_buf + ETHER_H_LEN + IP_H_LEN + UDP_H_LEN;
 	command_t * response = (command_t *)buffer;
 
 	memcpy(response, command, COMMAND_LEN);
 
 	do {
-		res = maple_docmd(command->data[0], command->data[1], command->data[2], command->data[3], command->data + 4);
-	} while (*res == MAPLE_RESPONSE_AGAIN);
+		res = maple_docmd(&command->data[0]);
+	} while (((char)res[0]) == MAPLE_RESPONSE_AGAIN);
+
+	int cmd = (char)res[0];
+	int len = (char)res[3];
 
 	/* Send response back over socket */
-	i = ((res[0] < 0) ? 4 : ((res[3] + 1) << 2));
+	int i = (cmd < 0) ? 4 : ((len + 1) << 2);
 	response->size = htonl(i);
+
 	// By aligning the transmit buffer, response->data is always aligned to 8 bytes.
 	// 'res' may or may not be, but if it is, this will be a rocket.
 //	memcpy(response->data, res, i);
-	SH4_aligned_memcpy((void*)((unsigned int)response->data & 0x1fffffff), (void*)((unsigned int)res & 0x1fffffff), i);
+	SH4_aligned_memcpy((void*)((unsigned int)(response->data)), (void*)((unsigned int)res ), i); //& 0x1fffffff
 
 	make_ip(ntohl(ip->src), ntohl(ip->dest), UDP_H_LEN + COMMAND_LEN + i, IP_UDP_PROTOCOL, (ip_header_t *)(pkt_buf + ETHER_H_LEN), ip->packet_id);
 	make_udp(ntohs(udp->src), ntohs(udp->dest), COMMAND_LEN + i, (ip_header_t *)(pkt_buf + ETHER_H_LEN), (udp_header_t *)(pkt_buf + ETHER_H_LEN + IP_H_LEN));

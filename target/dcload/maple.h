@@ -47,7 +47,7 @@ struct maple_devinfo {
 
 void maple_init(void);
 void maple_wait_dma(void);
-void *maple_docmd(int port, int unit, int cmd, int datalen, void *data);
+void *maple_docmd(unsigned char *data);
 
 #define MAPLE_DMA_SIZE (1024 + 1024 + 4 + 4 + 4)
 

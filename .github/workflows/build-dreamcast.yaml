@@ -75,16 +75,13 @@ jobs:
       - name: Build Tool     
         run: |
             sudo apt-get update
-            sudo apt-get install meson build-essential libelf-dev tree
-            cd host-src && make
+            sudo apt-get install -y meson build-essential libelf-dev pkg-config
+            sudo apt-get remove -y gcc-9 g++-9
+            sudo apt-get install -y gcc-12 g++-12
+            cd host
+            ./build.sh
+            chmod +x builddir/tests/run_tests
         
-      # - name: Upload Artifacts
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: dctool
-      #     path: host-src/tool/dc-tool-ip
-
-
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
@@ -94,16 +91,18 @@ jobs:
       - name: Power on Dreamcast
         run: |
             curl -X POST http://172.16.50.116/switch/dev_dreamcast_power/turn_on
+            sleep 30
 
-      - name: Test Uploading to DC
+      - name: Run dcload Tests
         run: |
-            chmod +x host-src/tool/dc-tool-ip
-            sleep 15
-            ./host/dctool.py 172.16.0.99 --target-version
-            ./host-src/tool/dc-tool-ip -t 172.16.0.99 -x /tmp/dcload/loader.elf -n
-            sleep 5
-            ./host/dctool.py 172.16.0.99 --target-version
+            ./host/builddir/tests/run_tests
 
       - name: Power Off Dreamcast
         if: always()
         run: curl -X POST http://172.16.50.116/switch/dev_dreamcast_power/turn_off
+
+      # - name: Upload Test Logs
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: dctool
+      #     path: host-src/tool/dc-tool-ip

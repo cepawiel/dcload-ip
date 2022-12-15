@@ -74,6 +74,18 @@ static vuc * const txdesc[4] = {
 	REGC(GAPS_TX_IO_AREA + 0x7800)
 };
 
+/* Libdream-style sleep function */
+// In units of milliseconds, max 245 (about 0.21 secs)
+static void net_sleep_ms(int ms)
+{
+	int i, cnt;
+	volatile unsigned int * a05f688c = (volatile unsigned int *)0xa05f688c;
+
+	cnt = 0x1800 * 0x58e * ms / 1000;
+	for (i=0; i<cnt; i++)
+		(void)*a05f688c;
+}
+
 int rtl_bb_detect(void)
 {
 	// This pointer's data is always aligned to 4 bytes--just look at the register address!
@@ -834,6 +846,12 @@ void rtl_bb_loop(int is_main_loop)
 
 			if (booted && (!running))
 			{
+				net_sleep_ms(240);
+				net_sleep_ms(240);
+				net_sleep_ms(240);
+				net_sleep_ms(240);
+				net_sleep_ms(240);
+				net_sleep_ms(240);
 				disp_status("idle...");
 			}
 

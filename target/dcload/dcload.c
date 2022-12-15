@@ -58,6 +58,7 @@ __attribute__((aligned(8))) static const unsigned int const_32[2] = {0x41f00000,
 #define TEXT_LEFT_START 30
 #define SCREEN_DISPLAY_LINE(x) (54 + TEXT_HEIGHT * x)
 
+unsigned int dhcp_timeout = 0;
 
 enum EDisplayPos {
 	ROW_NAME = 0,
@@ -373,6 +374,15 @@ static void update_lease_time_display(unsigned int new_time)
 	uint_to_string_dec(new_time, dhcp_lease_time_string);
 	clear_lines(SCREEN_DISPLAY_LINE(ROW_LEASE), TEXT_HEIGHT, global_bg_color);
 	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_LEASE), dhcp_lease_string, STR_COLOR);
+	draw_string(TEXT_LEFT_START + 276, SCREEN_DISPLAY_LINE(ROW_LEASE), dhcp_lease_time_string, STR_COLOR);
+}
+
+/*static*/ void update_dhcp_timeout_display(unsigned int time_remaining)
+{
+	// Casting to char gets rid of GCC warning.
+	uint_to_string_dec(time_remaining, dhcp_lease_time_string);
+	clear_lines(SCREEN_DISPLAY_LINE(ROW_LEASE), TEXT_HEIGHT, global_bg_color);
+	draw_string(TEXT_LEFT_START, SCREEN_DISPLAY_LINE(ROW_LEASE), "DHCP Timeout: ", STR_COLOR);
 	draw_string(TEXT_LEFT_START + 276, SCREEN_DISPLAY_LINE(ROW_LEASE), dhcp_lease_time_string, STR_COLOR);
 }
 
@@ -695,7 +705,9 @@ void set_ip_dhcp(void)
 		// Wait until DHCP assigns an IP address. This should not take very long.
 		// If it takes over 10 seconds, DHCP is probably not working.
 		disp_status("Acquiring new IP address via DHCP...");
+		update_dhcp_timeout_display(dhcp_timeout++);
 		int dhcp_result = dhcp_go((unsigned int*)&our_ip); // So that GCC doesn't warn about volatile
+		update_dhcp_timeout_display(111);
 		if((dhcp_result == -1) || dhcp_nest_counter_maxed)
 		{
 			// IP will be 0.0.0.0. Use the old ARP method at this point.

@@ -252,15 +252,21 @@ int handle_dhcp_reply(unsigned char *routersrcmac, dhcp_pkt_t* pkt_data, unsigne
 // STEP 4: Wait for DHCP ACK from router
 // STEP 5+: DHCP renewal
 
+// extern void update_dhcp_timeout_display(unsigned int);
 int dhcp_go(unsigned int *dhcp_ip_address_buffer) // Address buffer comes in as little endian
 {
 	dhcp_acked = 0;
 	dhcp_nest_counter++;
 
+	// update_dhcp_timeout_display(55);
  	build_send_dhcp_packet(DHCP_MSG_DHCPDISCOVER);
+	// update_dhcp_timeout_display(66);
 	bb->loop(0); // Wait for DHCP OFFER packet
+	// update_dhcp_timeout_display(77);
  	build_send_dhcp_packet(DHCP_MSG_DHCPREQUEST);
+	// update_dhcp_timeout_display(88);
 	bb->loop(0); // Wait for DHCP ACK (or NAK...)
+	// update_dhcp_timeout_display(99);
 
 	if(dhcp_acked && dhcp_nest_counter)
 	{
